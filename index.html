@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>DevBug FC vX — Sender</title>
+  <style>
+    body { background:#000; color:#fff; font-family: "Segoe UI", Roboto, Arial; padding:32px; text-align:center; }
+    h1 { color:#ff3333; margin-bottom:18px; }
+    .card { background:#070707; border:1px solid #333; padding:18px; border-radius:10px; max-width:720px; margin: 16px auto; }
+    input, textarea, button { display:block; margin:10px auto; width:90%; max-width:420px; padding:12px; border-radius:8px; border:1px solid #222; background:#0b0b0b; color:#fff; box-sizing:border-box; }
+    button { background:#ff0000; color:#fff; border:none; cursor:pointer; }
+    small.note { color:#aaa; display:block; margin-top:6px; }
+    pre { text-align:left; white-space:pre-wrap; word-break:break-word; background:#050505; padding:12px; border-radius:8px; color:#ddd; max-width:720px; margin:12px auto; }
+    label { display:block; margin-top:6px; color:#ddd; }
+  </style>
+</head>
+<body>
+  <h1>💥 DevBug FC vX — Sender</h1>
+
+  <div class="card">
+    <h2>Android</h2>
+    <form id="androidForm">
+      <label>Phone number (digits only, with country code):</label>
+      <input id="androidPhone" type="tel" placeholder="e.g. 2349012345678" required pattern="[0-9]{7,15}">
+      <label>Note (compulsory):</label>
+      <textarea id="androidNote" rows="3" maxlength="400" placeholder="Short safe note"></textarea>
+      <label>Admin token (paste):</label>
+      <input id="adminTokenA" type="text" placeholder="ADMIN_TOKEN (required)"/>
+      <small class="note">Admin token is required to send bug.</small>
+      <button type="submit">😈 Send Android</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>iOS</h2>
+    <form id="iosForm">
+      <label>Phone number (digits only, with country code):</label>
+      <input id="iosPhone" type="tel" placeholder="e.g. 2349012345678" required pattern="[0-9]{7,15}">
+      <label>Note (compulsory):</label>
+      <textarea id="iosNote" rows="3" maxlength="400" placeholder="Short safe note"></textarea>
+      <label>Admin token (paste):</label>
+      <input id="adminTokenI" type="text" placeholder="ADMIN_TOKEN (required)"/>
+      <small class="note">Admin token is required to send bug.</small>
+      <button type="submit">💣 Send iOS</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Result</h2>
+    <pre id="result">No actions yet.</pre>
+  </div>
+
+<script>
+  // === CONFIG ===
+  // For local testing set to "http://localhost:3000"
+  // When deployed set to your Render backend URL, e.g. "https://your-backend.onrender.com"
+  const BACKEND_URL = "http://localhost:3000";
+  // ==============
+
+  function show(obj){ document.getElementById('result').textContent = JSON.stringify(obj, null, 2); }
+  function normalize(n){ return String(n).replace(/\D/g,''); }
+
+  async function send(number, note, adminToken) {
+    const body = { number: normalize(number), note: String(note || '') };
+    const res = await fetch(BACKEND_URL + '/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (adminToken || '')
+      },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  document.getElementById('androidForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const num = document.getElementById('androidPhone').value.trim();
+    const note = document.getElementById('androidNote').value.trim().slice(0,400);
+    const token = document.getElementById('adminTokenA').value.trim();
+    if (!/^[0-9]{7,15}$/.test(num)) return alert('Enter a valid number (digits only).');
+    if (!token) return alert('ADMIN_TOKEN required.');
+    show({ status: 'sending...' });
+    try {
+      const r = await send(num, `Android test: ${note}`, token);
+      show(r);
+    } catch (err) {
+      show({ ok:false, error: String(err) });
+    }
+  });
+
+  document.getElementById('iosForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const num = document.getElementById('iosPhone').value.trim();
+    const note = document.getElementById('iosNote').value.trim().slice(0,400);
+    const token = document.getElementById('adminTokenI').value.trim();
+    if (!/^[0-9]{7,15}$/.test(num)) return alert('Enter a valid number (digits only).');
+    if (!token) return alert('ADMIN_TOKEN required.');
+    show({ status: 'sending...' });
+    try {
+      const r = await send(num, `iOS test: ${note}`, token);
+      show(r);
+    } catch (err) {
+      show({ ok:false, error: String(err) });
+    }
+  });
+</script>
+</body>
+</html>
